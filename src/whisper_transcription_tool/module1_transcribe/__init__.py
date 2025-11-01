@@ -61,6 +61,9 @@ import tempfile
 import json
 import shutil
 import psutil
+import threading
+import queue
+import time
 from typing import Optional, Dict, List, Union, Tuple
 from enum import Enum
 from pathlib import Path
@@ -358,6 +361,31 @@ def list_models(config: Optional[Dict] = None) -> List[str]:
             model_files.append(model_name)
     
     return model_files
+
+
+def _stream_reader(stream, output_queue, stream_name, logger):
+    """
+    Thread-safe helper function to read from a subprocess stream without blocking.
+
+    This prevents PIPE buffer deadlocks by continuously draining stdout/stderr
+    in separate threads, regardless of how much output the subprocess produces.
+
+    Args:
+        stream: The subprocess.PIPE stream to read from
+        output_queue: Thread-safe queue to write lines to
+        stream_name: Name for logging (e.g., "stdout" or "stderr")
+        logger: Logger instance for debug output
+    """
+    try:
+        for line in iter(stream.readline, ''):
+            if line:
+                output_queue.put((stream_name, line))
+        stream.close()
+    except Exception as e:
+        logger.error(f"Error reading from {stream_name}: {e}")
+    finally:
+        # Signal that this stream is done
+        output_queue.put((stream_name, None))
 
 
 def transcribe_audio(
@@ -685,58 +713,117 @@ def transcribe_audio(
             
             stdout = []
             stderr = []
-            
+
             # Fortschrittsanzeige-Muster (wird von Whisper.cpp ausgegeben)
             import re
             progress_pattern = re.compile(r'\[(\s*)([0-9]+)%\]')
-            
-            # Standard-Ausgabe und Fehlerausgabe in Echtzeit verarbeiten
-            while True:
-                # Stdout verarbeiten, wenn verfu00fcgbar
-                stdout_line = process.stdout.readline()
-                if stdout_line:
-                    stdout.append(stdout_line)
-                    # Debug-Ausgabe im Terminal anzeigen
-                    terminal_msg = f"[WHISPER PROGRESS] {stdout_line.strip()}"
-                    print(terminal_msg, flush=True)
-                    logger.debug(f"Whisper stdout: {stdout_line.strip()}")
-                    
-                    # Terminal output über WebSocket senden
-                    publish(EventType.PROGRESS_UPDATE, {
-                        'task': 'transcription',
-                        'terminal_output': terminal_msg,
-                        'user_id': transcription_id
-                    })
-                    
-                    # Fortschritt erkennen und Event veru00f6ffentlichen
-                    match = progress_pattern.search(stdout_line)
-                    if match:
-                        progress = int(match.group(2))
-                        # Terminal-Ausgabe für Progress
-                        print(f"[PROGRESS UPDATE] Transkription bei {progress}%", flush=True)                        # Fortschrittsereignis veru00f6ffentlichen
+
+            # Thread-safe Queue für Subprocess-Ausgabe
+            output_queue = queue.Queue()
+
+            # Starte separate Threads für stdout und stderr um PIPE Deadlock zu verhindern
+            stdout_thread = threading.Thread(
+                target=_stream_reader,
+                args=(process.stdout, output_queue, "stdout", logger),
+                daemon=True
+            )
+            stderr_thread = threading.Thread(
+                target=_stream_reader,
+                args=(process.stderr, output_queue, "stderr", logger),
+                daemon=True
+            )
+
+            stdout_thread.start()
+            stderr_thread.start()
+
+            # Tracke, ob Streams geschlossen sind
+            streams_done = {"stdout": False, "stderr": False}
+
+            # Timeout-Konfiguration (Standard: 3600 Sekunden = 1 Stunde)
+            process_timeout = 3600
+            process_start_time = time.time()
+
+            # Standard-Ausgabe und Fehlerausgabe in Echtzeit verarbeiten (ohne Deadlock)
+            while not all(streams_done.values()) or not output_queue.empty():
+                # Check für Timeout
+                elapsed_time = time.time() - process_start_time
+                if elapsed_time > process_timeout:
+                    logger.error(f"Subprocess timeout after {process_timeout} seconds. Terminating process.")
+                    process.terminate()
+                    try:
+                        process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        logger.error("Process didn't terminate gracefully, killing it.")
+                        process.kill()
+                        process.wait()
+
+                    # Cleanup temporäre Dateien auch bei Timeout
+                    try:
+                        cleanup_after_transcription(audio_path, config)
+                        logger.info(f"Cleaned up temp files after timeout: {audio_path}")
+                    except Exception as e:
+                        logger.warning(f"Failed to cleanup after timeout: {e}")
+
+                    raise TimeoutError(f"Transcription timed out after {process_timeout} seconds")
+
+                try:
+                    # Queue mit Timeout lesen (verhindert ewiges Warten)
+                    stream_name, line = output_queue.get(timeout=0.1)
+
+                    if line is None:
+                        # Stream ist fertig
+                        streams_done[stream_name] = True
+                        logger.debug(f"{stream_name} stream closed")
+                        continue
+
+                    # Verarbeite die Zeile je nach Stream
+                    if stream_name == "stdout":
+                        stdout.append(line)
+                        # Debug-Ausgabe im Terminal anzeigen
+                        terminal_msg = f"[WHISPER PROGRESS] {line.strip()}"
+                        print(terminal_msg, flush=True)
+                        logger.debug(f"Whisper stdout: {line.strip()}")
+
+                        # Terminal output über WebSocket senden
                         publish(EventType.PROGRESS_UPDATE, {
                             'task': 'transcription',
-                            'progress': progress,
-                            'status': f'Transkribiere... {progress}%',
-                            'terminal_output': f"[PROGRESS UPDATE] Transkription bei {progress}%",
-                            'audio_path': audio_path,
-                            'user_id': transcription_id  # ID zur Identifizierung des Clients
+                            'terminal_output': terminal_msg,
+                            'user_id': transcription_id
                         })
-                
-                # Stderr verarbeiten, wenn verfu00fcgbar
-                stderr_line = process.stderr.readline()
-                if stderr_line:
-                    stderr.append(stderr_line)
-                    logger.debug(f"Whisper stderr: {stderr_line.strip()}")
-                
-                # Pru00fcfen, ob der Prozess abgeschlossen ist
-                if process.poll() is not None:
-                    # Restliche Ausgabe lesen
-                    for line in process.stdout.readlines():
-                        stdout.append(line)
-                    for line in process.stderr.readlines():
+
+                        # Fortschritt erkennen und Event veröffentlichen
+                        match = progress_pattern.search(line)
+                        if match:
+                            progress = int(match.group(2))
+                            # Terminal-Ausgabe für Progress
+                            print(f"[PROGRESS UPDATE] Transkription bei {progress}%", flush=True)
+                            # Fortschrittsereignis veröffentlichen
+                            publish(EventType.PROGRESS_UPDATE, {
+                                'task': 'transcription',
+                                'progress': progress,
+                                'status': f'Transkribiere... {progress}%',
+                                'terminal_output': f"[PROGRESS UPDATE] Transkription bei {progress}%",
+                                'audio_path': audio_path,
+                                'user_id': transcription_id  # ID zur Identifizierung des Clients
+                            })
+
+                    elif stream_name == "stderr":
                         stderr.append(line)
-                    break
+                        logger.debug(f"Whisper stderr: {line.strip()}")
+
+                except queue.Empty:
+                    # Keine Daten verfügbar - prüfe ob Prozess noch läuft
+                    if process.poll() is not None:
+                        # Prozess ist fertig, aber warte noch auf Threads
+                        if stdout_thread.is_alive() or stderr_thread.is_alive():
+                            continue
+                        else:
+                            break
+                    continue
+
+            # Warte auf Threads (sollten bereits fertig sein)
+            stdout_thread.join(timeout=1)
+            stderr_thread.join(timeout=1)
             
             # Ergebnis zusammensetzen
             returncode = process.returncode
@@ -781,6 +868,14 @@ def transcribe_audio(
                     "audio_path": audio_path,
                     "error": error_msg
                 })
+
+                # Cleanup temporäre Dateien auch bei Fehler
+                try:
+                    cleanup_after_transcription(audio_path, config)
+                    logger.info(f"Cleaned up temp files after failed transcription: {audio_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to cleanup after error: {e}")
+
                 return TranscriptionResult(success=False, error=error_msg, stderr=stderr)
             
             # Read output text
@@ -880,6 +975,14 @@ def transcribe_audio(
             "audio_path": audio_path,
             "error": error_msg
         })
+
+        # Cleanup temporäre Dateien auch bei Exceptions
+        try:
+            cleanup_after_transcription(audio_path, config)
+            logger.info(f"Cleaned up temp files after exception: {audio_path}")
+        except Exception as cleanup_error:
+            logger.warning(f"Failed to cleanup after exception: {cleanup_error}")
+
         return TranscriptionResult(success=False, error=error_msg)
 
 

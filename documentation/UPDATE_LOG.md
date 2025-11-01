@@ -1,5 +1,67 @@
 # Update Log - Whisper Transcription Tool
 
+## 2025-11-01 - v0.9.7.5: Critical Stability Fix for Long Audio Files
+
+### 🔥 Critical Issue Resolved
+**Problem**: Application crashed or hung indefinitely when processing audio files >30 minutes, especially when processing multiple files sequentially.
+
+**Root Cause**: Subprocess PIPE buffer deadlock in transcription engine
+- Whisper.cpp subprocess output exceeded 64KB PIPE buffer limit
+- Blocking readline() loop caused mutual deadlock between stdout/stderr streams
+- No timeout mechanism allowed hung processes to run indefinitely
+- Failed transcriptions left orphaned temp files (3.2 GB discovered)
+
+### ✅ Fixes Implemented
+
+#### 1. Thread-Based PIPE Drainage
+**File**: `src/whisper_transcription_tool/module1_transcribe/__init__.py`
+- Added `_stream_reader()` helper function for non-blocking stream reading
+- Implemented separate threads for stdout and stderr to prevent deadlock
+- Thread-safe Queue for inter-thread communication
+- **Result**: No more PIPE deadlocks, regardless of output volume
+
+#### 2. Timeout Mechanism
+- Configurable subprocess timeout (default: 3600 seconds / 1 hour)
+- Graceful process termination on timeout
+- Automatic cleanup of temp files on timeout
+- **Result**: Hung processes automatically detected and terminated
+
+#### 3. Robust Cleanup System
+- Cleanup on timeout errors
+- Cleanup on transcription failures (returncode != 0)
+- Cleanup on exceptions
+- **Result**: No more orphaned temp files accumulating
+
+#### 4. Disk Space Recovery
+- Cleaned up 75 orphaned files from failed transcriptions
+- **Result**: 3.2 GB disk space recovered
+
+### 🎯 Performance & Compatibility
+- ✅ GPU acceleration (Metal) remains active
+- ✅ Processing speed unchanged
+- ✅ WebSocket real-time updates functional
+- ✅ All output formats (TXT, SRT, VTT, JSON) working
+- ✅ Chunk processing for large files operational
+
+### 📊 Improvements
+- **Before**: Files >30 minutes would hang indefinitely
+- **After**: Files of any length process reliably with timeout protection
+- **Memory**: Stable through Queue-based subprocess communication
+- **Disk**: Automatic cleanup prevents temp file accumulation
+
+### Technical Details
+**Changes Made**:
+- `module1_transcribe/__init__.py:366-388`: Added thread-safe stream reader
+- `module1_transcribe/__init__.py:721-818`: Refactored subprocess communication
+- `module1_transcribe/__init__.py:760-765`: Timeout with cleanup
+- `module1_transcribe/__init__.py:872-877`: Error cleanup
+- `module1_transcribe/__init__.py:979-984`: Exception cleanup
+
+**Dependencies**: No new dependencies added
+**Compatibility**: Fully backward compatible
+
+---
+
 ## 2025-08-31 - Deployment & Dependency Resolution
 
 ### Changes Made

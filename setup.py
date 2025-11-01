@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="whisper_transcription_tool",
-    version="0.9.7.3",
+    version="0.9.7.5",
     author="Whisper Transcription Tool Team",
     author_email="example@example.com",
     description="A modular Python tool for audio transcription using Whisper.cpp on Apple Silicon",

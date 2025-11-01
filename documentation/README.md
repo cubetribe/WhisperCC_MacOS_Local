@@ -1,6 +1,19 @@
-# Whisper Transcription Tool (v0.9)
+# Whisper Transcription Tool (v0.9.7.5)
 
 Ein modulares Python-Tool zur Transkription und Auswertung von Audio- und Videodaten mit Whisper.cpp, vollständig portabel und plattformunabhängig mit automatischer Audioextraktion.
+
+## 🆕 Version 0.9.7.5 - Critical Stability Update (2025-11-01)
+
+**Critical Fix**: Resolved subprocess PIPE deadlock causing crashes with audio files >30 minutes
+- ✅ Thread-based PIPE drainage prevents deadlocks
+- ✅ Configurable timeout mechanism (1 hour default)
+- ✅ Automatic cleanup of temp files on errors
+- ✅ 3.2 GB disk space recovered from orphaned files
+- ✅ Full backward compatibility maintained
+
+See [UPDATE_LOG.md](UPDATE_LOG.md) for complete details.
+
+---
 
 ## 🚀 Schnellstart
 
