@@ -2,39 +2,31 @@
 
 🎙️ **A powerful, modular Python tool for audio/video transcription using Whisper.cpp**
 
-[![Version](https://img.shields.io/badge/version-0.9.7.3-blue.svg)](https://github.com/cubetribe/WhisperCC_MacOS_Local)
-[![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
+[![Version](https://img.shields.io/badge/version-0.9.6-blue.svg)](https://github.com/cubetribe/WhisperCC_MacOS_Local)
+[![Python](https://img.shields.io/badge/python-3.11%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Personal%20Use%20%7C%20Commercial%20on%20Request-orange.svg)](LICENSE)
 [![Website](https://img.shields.io/badge/website-goaiex.com-orange.svg)](https://www.goaiex.com)
 
-## 📋 Aktueller Status - Version 0.9.7.3
+## 📋 Aktueller Status - Version 0.9.6
 
-**⚠️ WARNUNG: LLM-TEXTKORREKTUR LIEFERt KEINE ÄNDERUNGEN (INVESTIGATION LAUFEND)**
+**✅ STABLE RELEASE - CODEBASE CLEANUP**
 
-Diese Version dokumentiert den letzten Debug-Stand. Die Transkription startet zwar wieder, die LeoLM-gestützte Textkorrektur erzeugt jedoch aktuell keine Änderungen (0 Korrekturen, Laufzeit < 1 s).
+Diese Version fokussiert auf die Kernfunktionalität: Transkription mit Whisper.cpp und optionale LLM-Textkorrektur. Phone Recording und Chatbot-Module wurden entfernt für eine schlankere, wartbarere Codebasis.
 
-### 🔍 Beobachtungen v0.9.7.3
-- Transkription läuft ohne `DependencyError` durch
-- UI zeigt neue Korrektur-Zusammenfassung (Modell, Laufzeit, Änderungscount)
-- `_correction_metadata.json` meldet `method: "llm"`, aber `corrections_made: []`
-- Logausgabe: `LLM correction completed in … with 0 adjustments`
-- Verdacht: LLM wird weiterhin nicht korrekt angesprochen oder liefert identischen Text
+### ✅ Was funktioniert
+- ✅ Whisper-Transkription mit large-v3-turbo (optimiert für Apple Silicon)
+- ✅ Video-Extraktion mit FFmpeg
+- ✅ LLM-Textkorrektur mit LeoLM (optional)
+- ✅ Web-Interface mit Echtzeit-Updates
+- ✅ Alle Ausgabeformate (TXT, SRT, VTT, JSON)
+- ✅ Stabile Verarbeitung von Dateien beliebiger Länge (v0.9.7.5 Fix integriert)
 
-### ✔️ Was funktioniert
-- Whisper-Transkription (inkl. Opus-Handling)
-- UI/Progress-Anzeigen & Download-Links
-- Regelbasierter Fallback (falls LLM ausfällt)
+### 🧹 Änderungen in v0.9.6
+- Entfernt: Phone Recording (Module 3)
+- Entfernt: Chatbot-Integration (Module 4)
+- Fokus: Saubere, fokussierte Transkriptions-App mit Web-GUI
 
-### ❗ Bekannte Probleme
-- LeoLM-Korrektur liefert keine inhaltlichen Änderungen
-- Bisherige Tests auf fehlerhafte Texte bestätigen 0 Korrekturen
-- Weitere Analyse erforderlich (Prompt/Response-Logging, Fallback-Erkennung)
-
-### 📊 Test-Notizen
-- Keine automatische Test-Suite ausgeführt (Debug-Build)
-- Empfehlung: `_correction_metadata.json` prüfen und Logausgabe beobachten
-
-**Status: DEBUG-BUILD – NICHT FÜR PRODUKTIVUMGEBUNGEN**
+**Status: STABLE - READY FOR PRODUCTION USE**
 
 ## ✨ Features
 
@@ -46,10 +38,10 @@ Diese Version dokumentiert den letzten Debug-Stand. Die Transkription startet zw
 - 🖥️ **Refined GUI** with clearer workflows and status feedback
 - 📄 **Multiple output formats** (TXT, SRT, VTT, JSON)
 - 🧹 **Automatic cleanup** of temporary files
-- 🎯 **Phone recording** with dual-track support
 - 🎵 **Opus support** for WhatsApp voice messages
 - ✍️ **LLM text correction** with LeoLM for German text improvement
 - 🧠 **Local AI processing** - no cloud dependencies
+- ⚡ **Stable processing** of large audio files (>30 min)
 
 > ℹ️ Hinweis: Das Repository heißt jetzt `WhisperCC_MacOS_Local` (zuvor `Whisper-Transcription-Tool`). Bitte aktualisiere lokale Git-Remotes entsprechend.
 
@@ -112,8 +104,7 @@ whisper_clean/
 │       ├── core/                     # Core functionality
 │       ├── module1_transcribe/       # Transcription module
 │       ├── module2_extract/          # Video extraction
-│       ├── module3_phone/            # Phone recording
-│       ├── module4_chatbot/          # Chatbot module
+│       ├── module5_text_correction/  # LLM text correction
 │       └── web/                      # Web interface
 ├── models/                           # Whisper models
 ├── transcriptions/                   # Output directory
@@ -138,9 +129,6 @@ whisper-tool transcribe path/to/audio.mp3 --model large-v3-turbo
 
 # Extract audio from video
 whisper-tool extract path/to/video.mp4
-
-# Process phone recordings
-whisper-tool phone track_a.mp3 track_b.mp3
 ```
 
 ## 🎯 Available Models

@@ -18,7 +18,6 @@ requests>=2.32.0
 
 # Audio/Video processing
 srt>=3.5.0
-sounddevice>=0.4.6
 
 # Text processing and tokenization (for text correction)
 sentencepiece>=0.1.99
@@ -29,12 +28,12 @@ transformers>=4.21.0
 llama-cpp-python>=0.3.16  # Updated for better GGUF compatibility
 packaging>=20.0
 
-# Optional: Advanced features (chatbot, etc.)
-chromadb>=0.4.0
-faiss-cpu>=1.7.0
-sentence-transformers>=2.2.0
-gradio>=3.0.0
-streamlit>=1.10.0
+# Optional: Advanced features (removed in v0.9.6 - chatbot module removed)
+# chromadb>=0.4.0
+# faiss-cpu>=1.7.0
+# sentence-transformers>=2.2.0
+# gradio>=3.0.0
+# streamlit>=1.10.0
 
 # Development tools
 pytest>=7.0.0

@@ -82,4 +82,4 @@ config.yaml
 
 # Test files
 test_audio/
-test_video/
+test_video/.cleanup_backup_v0.9.6/

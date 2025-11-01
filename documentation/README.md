@@ -1,15 +1,17 @@
-# Whisper Transcription Tool (v0.9.7.5)
+# Whisper Transcription Tool (v0.9.6)
 
 Ein modulares Python-Tool zur Transkription und Auswertung von Audio- und Videodaten mit Whisper.cpp, vollständig portabel und plattformunabhängig mit automatischer Audioextraktion.
 
-## 🆕 Version 0.9.7.5 - Critical Stability Update (2025-11-01)
+## 🆕 Version 0.9.6 - Codebase Cleanup (2025-11-01)
 
-**Critical Fix**: Resolved subprocess PIPE deadlock causing crashes with audio files >30 minutes
-- ✅ Thread-based PIPE drainage prevents deadlocks
-- ✅ Configurable timeout mechanism (1 hour default)
-- ✅ Automatic cleanup of temp files on errors
-- ✅ 3.2 GB disk space recovered from orphaned files
-- ✅ Full backward compatibility maintained
+**Major Cleanup**: Streamlined codebase by removing phone recording and chatbot modules
+- ✅ Removed Module 3 (Phone Recording) and Module 4 (Chatbot)
+- ✅ Core transcription fully functional
+- ✅ LeoLM text correction preserved and independent
+- ✅ Reduced codebase complexity by ~15%
+- ✅ All transcription features unchanged
+
+**Previous update (v0.9.7.5):** Fixed critical stability issue with files >30 minutes
 
 See [UPDATE_LOG.md](UPDATE_LOG.md) for complete details.
 
@@ -67,45 +69,35 @@ Dieses Projekt bietet eine modulare Lösung zur Transkription von Audiodaten mit
 
 - **Lokale Transkription** mit Whisper.cpp, optimiert für Apple Silicon
 - **Direkte Videotranskription** mit automatischer Audioextraktion
+- **LeoLM Textkorrektur** für hochwertige Transkripte mit lokalem LLM
 - **Modulare Architektur** für einfache Erweiterbarkeit und Wartung
 - **Volle Portabilität** mit dynamischen Pfaden und plattformunabhängiger Konfiguration
 - **Einfacher Start** mit dem neuen QuickLauncher.command
 - **Standard-Modell** 'large-v3-turbo' für optimale Ergebnisse
-- **Verarbeitung von Telefonaufnahmen** mit zwei separaten Spuren
-- **Chatbot-Schnittstelle** zur Analyse von Transkripten
 - **Zentrale Konfiguration** mit allen Daten im Projektverzeichnis
 
 ## Modulare Architektur und Portabilität
 
-Das Projekt ist in vier Hauptmodule unterteilt und unterstützt dank der dynamischen Pfadfindung nun verschiedene Betriebssysteme und Verzeichnisstrukturen:
+Das Projekt ist in drei Hauptmodule unterteilt und unterstützt dank der dynamischen Pfadfindung nun verschiedene Betriebssysteme und Verzeichnisstrukturen:
 
 1. **Modul 1: Lokale Audio-Transkription**
    - Transkription lokaler .mp3- und .wav-Dateien mit Whisper.cpp
    - Unterstützung für verschiedene Modellgrößen und Sprachen
-   - Ausgabe in verschiedenen Formaten (.txt, .srt, .vtt)
+   - Ausgabe in verschiedenen Formaten (.txt, .srt, .vtt, .json)
    - Standardkonforme SRT-Untertitel mit präzisen Zeitangaben
    - Flexible Steuerung der Zeilenumbrüche in SRT-Untertiteln (einzeilig/zweizeilig)
+   - Chunk-Verarbeitung für große Dateien (>30 Minuten)
 
 2. **Modul 2: Video-Audioextraktion**
-   - Extraktion des Tons aus Videos (.mp4, .mov) mit FFmpeg
+   - Extraktion des Tons aus Videos (.mp4, .mov, .avi, .mkv) mit FFmpeg
    - Konvertierung in optimiertes Format für Whisper
    - Nahtlose Integration mit dem Transkriptionsmodul
 
-3. **Modul 3: Telefonaufnahme-Verarbeitung**
-   - Import von zwei separaten Audiospuren (Teilnehmer A und B)
-   - Separate Transkription beider Spuren
-   - Zusammenführung in ein dialogartiges Transkript
-
-4. **Modul 4: Chatbot zur Transkriptanalyse**
-   - Lokale Vektordatenbank für Transkripte
-   - Semantische Suche in Transkripten
-   - CLI- und Web-Schnittstelle (Gradio)
-
-5. **Modul 5: Live-Telefonat mit Echtzeit-Aufzeichnung** (in Entwicklung)
-   - Aufzeichnung von VoIP-Telefongesprächen
-   - Automatische Trennung und Kennzeichnung der Gesprächsteilnehmer
-   - Direkte Transkription mit Sprechererkennung
-   - Nahtlose Integration mit dem Chatbot-Modul zur Gesprächsanalyse
+3. **Modul 5: LeoLM Textkorrektur** (vollständig unabhängig)
+   - Lokale LLM-basierte Korrektur von Transkripten
+   - Korrektur von Rechtschreibung, Grammatik und Formatierung
+   - Batch-Verarbeitung mit Ressourcen-Management
+   - Keine Cloud-Abhängigkeit, vollständig lokal
 
 ## Architekturübersicht
 

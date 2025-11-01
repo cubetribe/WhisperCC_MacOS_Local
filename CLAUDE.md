@@ -66,9 +66,6 @@ whisper-tool transcribe path/to/audio.mp3 --model large-v3-turbo
 
 # Extract audio from video
 whisper-tool extract path/to/video.mp4
-
-# Process phone recordings with two tracks
-whisper-tool phone track_a.mp3 track_b.mp3
 ```
 
 ### Code Quality
@@ -107,16 +104,12 @@ The application follows a modular architecture with these main components:
    - FFmpeg wrapper for audio extraction from videos
    - Supports MP4, MOV, AVI formats
 
-4. **Module 3: Phone Recording** (`module3_phone/`)
-   - Dual-track recording and processing
-   - BlackHole integration for system audio capture
-   - Transcript merging from separate tracks
+4. **Module 5: Text Correction** (`module5_text_correction/`)
+   - Local LLM-based text correction with LeoLM
+   - Post-processing for transcription quality improvement
+   - Configurable correction levels
 
-5. **Module 4: Chatbot** (`module4_chatbot/`)
-   - Local vector database for transcripts
-   - LLM integration for transcript analysis
-
-6. **Web Interface** (`web/`)
+5. **Web Interface** (`web/`)
    - FastAPI-based web server
    - WebSocket support for real-time progress
    - Static files and Jinja2 templates
@@ -133,7 +126,6 @@ The application follows a modular architecture with these main components:
 
 - The application uses Whisper.cpp binaries located in `deps/whisper.cpp/build/bin/`
 - FFmpeg is required for video processing (auto-installed via install.sh)
-- BlackHole audio driver required for system audio capture
 - WebSocket events are used for real-time progress updates during transcription
 - The start_server.sh script handles port conflicts and manages running instances
 

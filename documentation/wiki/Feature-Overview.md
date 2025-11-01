@@ -15,20 +15,10 @@ WhisperCC MacOS Local kombiniert leistungsfähige Transkriptionspipelines mit ei
 - Chunking mit Token- & Satzgrenzen, Rückfallebene bei Fehlern
 - Output: Original und korrigierte Version (TXT, JSON mit Metadaten)
 
-### 3. Telefonaufzeichnung (Modul 3)
-- Dual-Track-Mitschnitt (Mikrofon + Systemaudio)
-- Mock-Dataset und Tests (`testing_archive/`, `tests/e2e/`)
-- Aktuell im Maintenance-Mode (v0.9.7 Roadmap)
-
-### 4. Weboberfläche
+### 3. Weboberfläche
 - Responsive UI mit Bootstrap
 - Zweiphasiger Fortschrittsbalken (Transcription + Correction)
 - Datei-Download, Log-Terminal und Debug-Dashboard
-
-### 5. macOS-Anwendung
-- SwiftUI-App (`macos/WhisperLocalMacOs`) mit Build-Skripten
-- CI/CD Workflows (`.github/workflows/`) für notarized Releases
-- Automatisierte QA-Skripte und Checklisten
 
 ## Unterstützende Komponenten
 - **ResourceManager:** Modell-Swap (Whisper ↔ LeoLM), RAM-Checks, Monitoring

@@ -27,9 +27,6 @@ from ..core.logging_setup import get_logger
 from ..core.events import EventType, Event, subscribe, unsubscribe
 from ..core.utils import ensure_directory_exists
 
-# Phone recording module
-from .phone_routes import router as phone_router
-
 logger = get_logger(__name__)
 
 # Pydantic models for request/response bodies if needed
@@ -63,9 +60,6 @@ def format_duration(seconds: Optional[float]) -> Optional[str]:
 
     hours, rem_minutes = divmod(minutes, 60)
     return f"{int(hours)}h {int(rem_minutes)}m {rem_seconds:.1f}s"
-
-# Phone API-Routes registrieren
-app.include_router(phone_router)
 
 # Get the directory of this file
 current_dir = Path(__file__).parent
@@ -882,122 +876,6 @@ async def extract_audio_api(
     
     except Exception as e:
         logger.error(f"Error extracting audio: {e}")
-        return JSONResponse(
-            {"success": False, "error": str(e)},
-            status_code=500
-        )
-
-
-@app.get("/phone", response_class=HTMLResponse)
-async def phone_page(request: Request):
-    """Render the phone call processing page."""
-    return templates.TemplateResponse(
-        "phone.html",
-        {"request": request, "title": "Telefonaufnahme-Verarbeitung", "app_version": VERSION}
-    )
-
-
-@app.post("/api/phone")
-async def process_phone_api(
-    track_a: UploadFile = File(...),
-    track_b: UploadFile = File(...)
-):
-    """
-    API endpoint for processing phone call recordings.
-    
-    Args:
-        track_a: First audio track
-        track_b: Second audio track
-    
-    Returns:
-        JSON response with processing result
-    """
-    try:
-        # Import here to avoid circular imports
-        from ..module3_phone import process_tracks
-        
-        # Save uploaded files to temporary location
-        temp_dir = Path(config["output"]["default_directory"]) / "temp"
-        os.makedirs(temp_dir, exist_ok=True)
-        
-        temp_file_a = temp_dir / track_a.filename
-        with open(temp_file_a, "wb") as f:
-            f.write(await track_a.read())
-        
-        temp_file_b = temp_dir / track_b.filename
-        with open(temp_file_b, "wb") as f:
-            f.write(await track_b.read())
-        
-        # Process tracks
-        result = process_tracks(
-            str(temp_file_a),
-            str(temp_file_b),
-            config=config
-        )
-        
-        # Return result
-        return JSONResponse(result.to_dict())
-    
-    except Exception as e:
-        logger.error(f"Error processing phone call: {e}")
-        return JSONResponse(
-            {"success": False, "error": str(e)},
-            status_code=500
-        )
-
-
-@app.get("/chatbot", response_class=HTMLResponse)
-async def chatbot_page(request: Request):
-    """Render the chatbot page."""
-    return templates.TemplateResponse(
-        "chatbot.html",
-        {"request": request, "title": "Chatbot", "app_version": VERSION}
-    )
-
-
-@app.post("/api/chatbot")
-async def chatbot_api(
-    transcript_file: Optional[UploadFile] = File(None),
-    query: str = Form(...)
-):
-    """
-    API endpoint for chatbot queries.
-    
-    Args:
-        transcript_file: Transcript file to analyze (optional)
-        query: User query
-    
-    Returns:
-        JSON response with chatbot response
-    """
-    try:
-        # Import here to avoid circular imports
-        from ..module4_chatbot import query_chatbot
-        
-        # Save uploaded file to temporary location if provided
-        transcript_path = None
-        if transcript_file:
-            temp_dir = Path(config["output"]["default_directory"]) / "temp"
-            os.makedirs(temp_dir, exist_ok=True)
-            
-            temp_file = temp_dir / transcript_file.filename
-            with open(temp_file, "wb") as f:
-                f.write(await transcript_file.read())
-            
-            transcript_path = str(temp_file)
-        
-        # Query chatbot
-        response = query_chatbot(
-            query,
-            transcript_path=transcript_path,
-            config=config
-        )
-        
-        # Return result
-        return JSONResponse({"success": True, "response": response})
-    
-    except Exception as e:
-        logger.error(f"Error querying chatbot: {e}")
         return JSONResponse(
             {"success": False, "error": str(e)},
             status_code=500

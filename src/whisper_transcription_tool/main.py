@@ -98,38 +98,10 @@ def parse_args():
         help="Path to video file"
     )
     extract_parser.add_argument(
-        "--output", 
+        "--output",
         help="Output audio file path"
     )
-    
-    # Phone command
-    phone_parser = subparsers.add_parser("phone", help="Process phone call recordings")
-    phone_parser.add_argument(
-        "track_a", 
-        help="Path to first audio track"
-    )
-    phone_parser.add_argument(
-        "track_b", 
-        help="Path to second audio track"
-    )
-    phone_parser.add_argument(
-        "--output", 
-        help="Output transcript file path"
-    )
-    
-    # Chatbot command
-    chatbot_parser = subparsers.add_parser("chatbot", help="Start chatbot interface")
-    chatbot_parser.add_argument(
-        "--transcript", 
-        help="Path to transcript file to analyze"
-    )
-    chatbot_parser.add_argument(
-        "--mode", 
-        choices=["cli", "web"],
-        default="web",
-        help="Interface mode"
-    )
-    
+
     # Web command
     web_parser = subparsers.add_parser("web", help="Start web interface")
     web_parser.add_argument(
@@ -212,32 +184,7 @@ def main():
         else:
             logger.error(f"Audio extraction failed: {result.error}")
             return 1
-    
-    elif args.command == "phone":
-        from .module3_phone import process_tracks
-        
-        result = process_tracks(
-            args.track_a,
-            args.track_b,
-            output_path=args.output,
-            config=config
-        )
-        
-        if result.success:
-            logger.info(f"Phone call processing completed: {result.output_file}")
-        else:
-            logger.error(f"Phone call processing failed: {result.error}")
-            return 1
-    
-    elif args.command == "chatbot":
-        from .module4_chatbot import start_chatbot
-        
-        start_chatbot(
-            transcript_path=args.transcript,
-            mode=args.mode,
-            config=config
-        )
-    
+
     elif args.command == "web":
         try:
             from .web import start_web_server

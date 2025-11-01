@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="whisper_transcription_tool",
-    version="0.9.7.5",
+    version="0.9.6",
     author="Whisper Transcription Tool Team",
     author_email="example@example.com",
     description="A modular Python tool for audio transcription using Whisper.cpp on Apple Silicon",
@@ -37,11 +37,10 @@ setup(
         "websockets",
     ],
     extras_require={
-        "chatbot": ["chromadb", "faiss-cpu", "sentence-transformers"],
         "llm": ["llama-cpp-python>=0.2.0", "sentencepiece>=0.1.99", "nltk>=3.8", "transformers>=4.21.0", "packaging>=20.0"],
-        "web": ["fastapi", "uvicorn", "jinja2", "python-multipart", "websockets", "httpx", "sounddevice"],
+        "web": ["fastapi", "uvicorn", "jinja2", "python-multipart", "websockets", "httpx"],
         "dev": ["pytest", "black", "isort", "flake8", "mypy"],
-        "full": ["chromadb", "faiss-cpu", "sentence-transformers", "fastapi", "uvicorn", "jinja2", "python-multipart", "srt", "websockets", "httpx", "sounddevice", "llama-cpp-python>=0.2.0", "sentencepiece>=0.1.99", "nltk>=3.8", "transformers>=4.21.0", "packaging>=20.0"]
+        "full": ["fastapi", "uvicorn", "jinja2", "python-multipart", "srt", "websockets", "httpx", "llama-cpp-python>=0.2.0", "sentencepiece>=0.1.99", "nltk>=3.8", "transformers>=4.21.0", "packaging>=20.0"]
     },
     entry_points={
         "console_scripts": [
